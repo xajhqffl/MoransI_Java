@@ -11,6 +11,7 @@ void setup(){
   
 //  DoubleMatrix A = DoubleMatrix.randn(100,100);
 //  A.transpose();
+//test it in windows sourcetree
 
 Random generator = new Random();
 Double[] A = new Double[100];
