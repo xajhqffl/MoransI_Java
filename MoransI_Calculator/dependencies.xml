@@ -1,0 +1,8 @@
+<files>
+	<file>
+		<name>jablas</name>
+		<jar>jblas-1.2.3.jar</jar>
+		<version>1.2.3</version>
+		<link>http://mikiobraun.github.io/jblas/</link>
+	</file>
+</files>
