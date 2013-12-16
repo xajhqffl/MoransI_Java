@@ -10,11 +10,13 @@ import java.lang.Math;
 void setup(){
   
 //read SOM training file
-println(calcSOMCellLoc(1910,100,100));
-String[] lines = loadStrings("/Users/fangmingdu/Documents/mallet_training/Ph3_100k.cod");//("/Users/fangmingdu/MoransI_Java/MoransI_Calculator/test/ozone.csv");//("C:\\Users\\Fangming\\Documents\\thesis\\new_map\\data\\Ph3_100k.cod");
-double[] attr = new double[10000];
+//println(calcSOMCellLoc(1910,100,100));
+//("/Users/fangmingdu/Documents/mallet_training/Ph3_100k.cod")
+//("C:\\Users\\Fangming\\Documents\\thesis\\new_map\\data\\Ph3_100k.cod");
+/*double[] attr = new double[10000];
 double[] x = new double[10000];
 double[] y = new double[10000];
+String[] output = new String[10000];
 for(int i=1;i<lines.length;i++)
 {
   //println(i);
@@ -26,11 +28,14 @@ for(int i=1;i<lines.length;i++)
   x[i-1]=xy[0];
   y[i-1]=xy[1];
   //println(x[i-1]);
+  output[i-1] = i+","+attributes[0]+","+xy[0]+","+xy[1];
 }
-DoubleMatrix dm = getInverseDistMatrix(x,y);
-dm.print();
+saveStrings("output.csv",output);*/
+//DoubleMatrix dm = getInverseDistMatrix(x,y);
+//dm.print();
 
-/*double[] x = new double[lines.length-1];
+String[] lines = loadStrings("/Users/fangmingdu/MoransI_Java/MoransI_Calculator/test/ozone.csv");
+double[] x = new double[lines.length-1];
 double[] y = new double[lines.length-1];
 double[] attr = new double[lines.length -1];
 for(int i=1;i<lines.length;i++)
@@ -44,7 +49,7 @@ for(int i=1;i<lines.length;i++)
   //println(attr[i-1]);
 }
 DoubleMatrix dm = getInverseDistMatrix(x,y);
-println(calcMoransI(attr,dm));*/
+println(calcMoransI(attr,dm));
 //testing distance calculators
 //println(calcDist((double)0,(double)0,(double)2,(double)2));
 
@@ -151,11 +156,15 @@ double[] calcSOMCellLoc(int index,int xdim,int ydim)
 {
   double deltaY=(1.0*Math.pow(0.75,0.5));
   float deltaX=1.0;
+  double xloc;
     
   int rowindex = index/xdim;//row index starts from 0, so the first row would be 0
   int columnindex = index-rowindex*xdim;//the column index starts from 1
   
-  double xloc = (columnindex-1)*deltaX+0+rowindex%2*0.5;
+  if(rowindex%2 == 0)
+    xloc = (columnindex-1)*deltaX+0;
+  else
+    xloc = (columnindex-1)*deltaX+0.5;
   double yloc = rowindex*deltaY+0;
   
   return new double[]{xloc,yloc};
