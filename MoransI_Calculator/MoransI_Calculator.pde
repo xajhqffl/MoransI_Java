@@ -11,24 +11,40 @@ void setup(){
   
 //read SOM training file
 println(calcSOMCellLoc(1910,100,100));
-String[] lines = loadStrings("C:\\Users\\Fangming\\Documents\\thesis\\new_map\\data\\Ph3_100k.cod");
+String[] lines = loadStrings("/Users/fangmingdu/Documents/mallet_training/Ph3_100k.cod");//("/Users/fangmingdu/MoransI_Java/MoransI_Calculator/test/ozone.csv");//("C:\\Users\\Fangming\\Documents\\thesis\\new_map\\data\\Ph3_100k.cod");
 double[] attr = new double[10000];
-float[] x = new float[10000];
-float[] y = new float[10000];
+double[] x = new double[10000];
+double[] y = new double[10000];
 for(int i=1;i<lines.length;i++)
 {
-  println(i);
+  //println(i);
   String[] attributes = lines[i].split(" ");
   attr[i-1]=Double.parseDouble(attributes[0]);
-  println(attr[i-1]);
+  //println(attr[i-1]);
   
-  float[] xy = calcSOMCellLoc(i,100,100);
+  double[] xy = calcSOMCellLoc(i,100,100);
   x[i-1]=xy[0];
   y[i-1]=xy[1];
-  println(x[i-1]);
+  //println(x[i-1]);
 }
-FloatMatrix dm = getInverseDistMatrix(x,y);
+DoubleMatrix dm = getInverseDistMatrix(x,y);
+dm.print();
 
+/*double[] x = new double[lines.length-1];
+double[] y = new double[lines.length-1];
+double[] attr = new double[lines.length -1];
+for(int i=1;i<lines.length;i++)
+{
+  String[] data = lines[i].split(",");
+  attr[i-1]=Double.parseDouble(data[1]); //<>//
+  x[i-1]=Double.parseDouble(data[2]);
+  y[i-1]=Double.parseDouble(data[3]);
+  //println(x[i-1]);
+  //println(y[i-1]);
+  //println(attr[i-1]);
+}
+DoubleMatrix dm = getInverseDistMatrix(x,y);
+println(calcMoransI(attr,dm));*/
 //testing distance calculators
 //println(calcDist((double)0,(double)0,(double)2,(double)2));
 
@@ -49,11 +65,13 @@ double calcMoransI(double[] attribtues,DoubleMatrix weights)
   //1.calculate mean value of the attributes
   double mean = calcMean(attribtues);
   
-  double sum1=(double)0,sum2=(double)0,sum3=(double)0;
+  float sum1=(float)0,sum2=(float)0,sum3=(float)0;
   
   //2.calculate moran's I based on wiki formula http://en.wikipedia.org/wiki/Moran%27s_I    http://resources.arcgis.com/en/help/main/10.1/index.html#/How_Spatial_Autocorrelation_Global_Moran_s_I_works/005p0000000t000000/
   for(int i=0;i<weights.getRows();i++)
   {
+    sum3+=Math.pow((attribtues[i]-mean),2);
+    
     for(int j=0;j<weights.getColumns();j++)
     {
       double zi=attribtues[i]-mean;
@@ -62,19 +80,21 @@ double calcMoransI(double[] attribtues,DoubleMatrix weights)
       
       sum1+=zi*zj*wij;
       sum2+=wij;
-      sum3+=Math.pow(zi,2);
       
     }
   }
-  
-  double morani = attribtues.length/sum2 * sum1/sum3;
+  println(attribtues.length);
+  println(sum1);
+  println(sum2);
+  println(sum3);
+  float morani = attribtues.length/sum2 * sum1/sum3;
   return morani;
   
 }
 
-FloatMatrix getInverseDistMatrix(float[] X,float[] Y)
+DoubleMatrix getInverseDistMatrix(double[] X,double[] Y)
 {
-  FloatMatrix inverseDistMx = FloatMatrix.zeros(X.length,X.length);
+  DoubleMatrix inverseDistMx = DoubleMatrix.zeros(X.length,X.length);
   println("initialized");
    
   if(X.length != Y.length){
@@ -84,10 +104,10 @@ FloatMatrix getInverseDistMatrix(float[] X,float[] Y)
   else{
     for(int i=0;i<X.length;i++){
       for(int j=i+1;j<X.length;j++){
-        float dist = 1/calcDist(X[i],Y[i],X[j],Y[j]);
+        double dist = 1/calcDist(X[i],Y[i],X[j],Y[j]);
         inverseDistMx.put(i,j,dist);
         inverseDistMx.put(j,i,dist);
-        println(dist);
+        //println(dist);
        // dist[j] = calcDist(X[i],Y[i]);
       }
     }
@@ -96,8 +116,14 @@ FloatMatrix getInverseDistMatrix(float[] X,float[] Y)
   return inverseDistMx;
 }
 
-float calcDist(float x1,float y1,float x2,float y2){
-  return (float)(Math.sqrt(Math.pow((x1-x2),2)+Math.pow((y1-y2),2)));
+double calcDist(double x1,double y1,double x2,double y2){
+  double x_pow2 = Math.pow((x1-x2),2); //<>//
+  double y_pow2 = Math.pow((y1-y2),2);
+  //println(x1+" " + y1 + " " + x2 + " " +y2);
+  //println(x_pow2 + " "+y_pow2); //<>//
+  //println(Math.sqrt(x_pow2+y_pow2));
+  return Math.sqrt(x_pow2+y_pow2);
+  //return (float)(Math.sqrt(+Math));
 }
 
 double calcMean(double[] values)
@@ -121,17 +147,17 @@ double calcMean(double[] values)
 * @return array of x y locations, array[0] x location, array[1] y location
 *
 */
-float[] calcSOMCellLoc(int index,int xdim,int ydim)
+double[] calcSOMCellLoc(int index,int xdim,int ydim)
 {
-  float deltaY=(float)(1.0*Math.pow(0.75,0.5));
+  double deltaY=(1.0*Math.pow(0.75,0.5));
   float deltaX=1.0;
     
   int rowindex = index/xdim;//row index starts from 0, so the first row would be 0
   int columnindex = index-rowindex*xdim;//the column index starts from 1
   
-  float xloc = (columnindex-1)*deltaX+0+rowindex%2*0.5;
-  float yloc = rowindex*deltaY+0;
+  double xloc = (columnindex-1)*deltaX+0+rowindex%2*0.5;
+  double yloc = rowindex*deltaY+0;
   
-  return new float[]{xloc,yloc};
+  return new double[]{xloc,yloc};
   
 }
