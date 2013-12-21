@@ -1,11 +1,5 @@
-//Step 1. location generator based on SOM neuron index
-
-//Step 2. create inverse distance matrix of all the neurons
-
-import org.jblas.*;
-
-import java.util.Random;
 import java.lang.Math;
+import org.apache.commons.math3.distribution.NormalDistribution;
 
 void setup(){
   
@@ -25,9 +19,8 @@ for(int i=1;i<lines.length;i++)
 int[][] neighbors = new int[10000][];
 double[][] weights = new double[10000][];
 calc_inverse_spatial_weigths(points,1.5,neighbors,weights,true);
-println(neighbors[0]);
-println(weights[0]);
 println(Moran.I(attr,weights,neighbors));
+//NormalDistribution n = new NormalDistribution();
 }
 
 double calcMoransI(double[] attribtues,double[][] weights,int[][] neighbors)

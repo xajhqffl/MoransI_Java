@@ -15,19 +15,25 @@ public static class Moran{
     
       //1.calculate mean value of the attributes
     double mean = calcMean(attribtues);
+    int n = attribtues.length;
     
-    float sum1=(float)0,sum2=(float)0,sum3=(float)0;
+    
+    double sum1=(double)0,sum2=(double)0,sum3=(double)0,s1=(double)0.0,s2=(double)0.0;
     
     //2.calculate moran's I based on wiki formula http://en.wikipedia.org/wiki/Moran%27s_I    http://resources.arcgis.com/en/help/main/10.1/index.html#/How_Spatial_Autocorrelation_Global_Moran_s_I_works/005p0000000t000000/
     for(int i=0;i<weights.length;i++)
     {
       sum3+=Math.pow((attribtues[i]-mean),2);
       
+      double tempwij_all=0.0;
+      double tempwji_all=0.0;
+      
       for(int j=0;j<weights.length;j++)
       {
         double zi=attribtues[i]-mean;
         double zj=attribtues[j]-mean;
         double wij = get_spatialweights_fromNeighbors(weights,neighbors,i,j);
+        double wji = get_spatialweights_fromNeighbors(weights,neighbors,j,i);
         
         //self weights equal zero
         if(i==j)
@@ -36,14 +42,38 @@ public static class Moran{
         sum1+=zi*zj*wij;
         sum2+=wij;
         
+        s1+=(wij+wji)*(wij+wji);
+        
+        tempwij_all+=wij;
+        tempwji_all+=wji;
+        
       }
+      
+      s2+=(tempwij_all+tempwji_all)*(tempwij_all+tempwji_all);
     }
 //    println(attribtues.length);
 //    println(sum1);
 //    println(sum2);
 //    println(sum3);
-    float morani = attribtues.length/sum2 * sum1/sum3;
-    return new double[]{morani};
+    double morani = n/sum2 * sum1/sum3;
+    double moranEI = -1. / (n - 1);
+    
+    //--------calculate p value------------
+    s1/=2;
+//    println("s0 " + sum2);
+//    println("s1 " + s1);
+//    println("s2 " + s2);
+    double s0=sum2;
+    double v_num = n * n * s1 - n * s2 + 3 * s0 * s0;
+    double v_den = (n - 1) * (n + 1) * sum2 * sum2;
+    double VI_norm = v_num / v_den - (1.0 / (n - 1)) * (1.0 / (n - 1));
+    double seI_norm = Math.pow(VI_norm,0.5);
+    double z_norm = (morani - moranEI) / seI_norm ;
+    
+    NormalDistribution n_distr = new NormalDistribution(0,1);
+    double p_norm = 2.0 * (1 - n_distr.cumulativeProbability(Math.abs(z_norm)));
+    
+    return new double[]{morani,p_norm};
     
   }
 
@@ -62,6 +92,7 @@ public static class Moran{
     
     return 0;
   }
+  
 
 }
 
