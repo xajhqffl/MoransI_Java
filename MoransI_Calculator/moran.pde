@@ -9,6 +9,10 @@ public static class Moran{
   * 
   * It gets the same result as ArcGIS Moran's I toolbox (use Inverse Distance as spatial weight measure)
   * 
+  * @param attributes one array of the attributes to be computed for Moran's I
+  * @param weights  results from inverse spatial weights
+  * @param neighbors results from inverse spatial weights
+  * @return double[2]  the first parameter is the Moran's I, the second the parameter is the p-value
   *
   */
   public static double[] I(double[] attribtues,double[][] weights,int[][] neighbors){
@@ -58,7 +62,10 @@ public static class Moran{
     double morani = n/sum2 * sum1/sum3;
     double moranEI = -1. / (n - 1);
     
-    //--------calculate p value------------
+    //--------calculate p value------------ 
+    //-------refers to the souce code in pysal library-----
+    //--------http://pysal.org/library/esda/moran.html---
+    //--------pysal.esda.moran.Moran--------
     s1/=2;
 //    println("s0 " + sum2);
 //    println("s1 " + s1);
