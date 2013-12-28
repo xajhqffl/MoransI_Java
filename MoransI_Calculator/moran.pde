@@ -91,6 +91,7 @@ public static class Moran{
   */
   private static double get_spatialweights_fromNeighbors(double[][] weights,int[][] neighbors,int host,int neighbor)
   {
+    //println(host);
     for(int i=0;i<neighbors[host].length;i++)
     {
       if(neighbors[host][i] == neighbor)
@@ -105,94 +106,187 @@ public static class Moran{
 
 
 
-/**
-* The function calcuates the SOM cell X,Y locations in the spatial space by its index.
-* This calculation also follows the same rule how SOM cells are created in the SOM Analyst toolbox in ArcGIS.
-*
-* @author:Fangming Du
-* @param index the index of SOM cells,here index is defined to start from 1, which simplified the calculation
-* @param xdim the dimensions of x direction, horizontal direction
-* @param ydim the dimensions of y direction, vertial direction
-* @return array of x y locations, array[0] x location, array[1] y location
-*
-*/
-double[] calcSOMCellLoc(int index,int xdim,int ydim)
-{
-  double deltaY=(1.0*Math.pow(0.75,0.5));
-  float deltaX=1.0;
-  double xloc;
-    
-  int rowindex = index/xdim;//row index starts from 0, so the first row would be 0
-  int columnindex = index-rowindex*xdim;//the column index starts from 0
-  
-  if(rowindex%2 == 0)
-    xloc = columnindex*deltaX+0;
-  else
-    xloc = columnindex*deltaX+0.5;
-  double yloc = rowindex*deltaY+0;
-  
-  return new double[]{xloc,yloc};
-  
-}
 
 
-/**
-* Caculate Inverse spatial weights within a given distance threshold
-* refer to pysal python library calculations of spatial weigths
-* http://www.pysal.org/library/weights/weights.html#weights-spatial-weights
-* The result of the spatial weights have two arrays, one describe the neighborhood configuration for each point, and the other array stores the corresponding weights for each neighbor
-*
-* @author:Fangming Du 
-* @param points array, each dimension has two values, x and y
-* @param threshold filter out irrelevant neighbors
-* @param neighbors empty int arrays for storing neighbors
-* @param weights empty double array for storing weigths
-* @param rowStandardization whether apply row standardization for weights
-* @return 
-*/
-void calc_inverse_spatial_weigths(double[][] points,float threshold,int[][] neighbors,double[][] weights,boolean rowStandardization)
-{
-  //iterate through each points
-  int len = points.length;
-  //neighbors = new int[len][];
-  //weights
-  for(int i=0;i<len;i++)
+public class SpatialWeight{
+  
+  /**
+  * The function calcuates the SOM cell X,Y locations in the spatial space by its index.
+  * This calculation also follows the same rule how SOM cells are created in the SOM Analyst toolbox in ArcGIS.
+  *
+  * @author:Fangming Du
+  * @param index the index of SOM cells,here index is defined to start from 1, which simplified the calculation
+  * @param xdim the dimensions of x direction, horizontal direction
+  * @param ydim the dimensions of y direction, vertial direction
+  * @return array of x y locations, array[0] x location, array[1] y location
+  *
+  */
+  public double[] calcSOMCellLoc(int index,int xdim,int ydim)
   {
-    ArrayList tempweights= new ArrayList();
-    ArrayList tempneibhors=new ArrayList();
-    for(int j=0;j<len;j++)
-    {
-      if(i==j)
-        continue;
-      double dist = calcDist(points[i][0],points[i][1],points[j][0],points[j][1]);
-      if(dist<threshold)
-      {
-        tempweights.add(1/dist);
-        tempneibhors.add(j);
-      }
-    }
+    double deltaY=(1.0*Math.pow(0.75,0.5));
+    float deltaX=1.0;
+    double xloc;
+      
+    int rowindex = index/xdim;//row index starts from 0, so the first row would be 0
+    int columnindex = index-rowindex*xdim;//the column index starts from 0
     
-    neighbors[i] = convertInts(tempneibhors);
-    weights[i] = convertDoubles(tempweights);
+    if(rowindex%2 == 0)
+      xloc = columnindex*deltaX+0;
+    else
+      xloc = columnindex*deltaX+0.5;
+    double yloc = rowindex*deltaY+0;
     
-    if(rowStandardization)
-    {
-      double sum_weight = calcSum(weights[i]);
-      for(int iter=0;iter<weights[i].length;iter++)
-      {
-        weights[i][iter] = weights[i][iter]/sum_weight;
-      }
-    }
+    return new double[]{xloc,yloc};
     
   }
+  
+  
+  /**
+  * Caculate Inverse spatial weights within a given distance threshold
+  * refer to pysal python library calculations of spatial weigths
+  * http://www.pysal.org/library/weights/weights.html#weights-spatial-weights
+  * The result of the spatial weights have two arrays, one describe the neighborhood configuration for each point, and the other array stores the corresponding weights for each neighbor
+  *
+  * @author:Fangming Du 
+  * @param points array, each dimension has two values, x and y
+  * @param threshold filter out irrelevant neighbors
+  * @param neighbors empty int arrays for storing neighbors
+  * @param weights empty double array for storing weigths
+  * @param rowStandardization whether apply row standardization for weights
+  * @return 
+  */
+  public void  calc_inverse_spatial_weigths(double[][] points,float threshold,int[][] neighbors,double[][] weights,boolean rowStandardization)
+  {
+    //iterate through each points
+    int len = points.length;
+    //neighbors = new int[len][];
+    //weights
+    for(int i=0;i<len;i++)
+    {
+      ArrayList tempweights= new ArrayList();
+      ArrayList tempneibhors=new ArrayList();
+      for(int j=0;j<len;j++)
+      {
+        if(i==j)
+          continue;
+        double dist = calcDist(points[i][0],points[i][1],points[j][0],points[j][1]);
+        if(dist<threshold)
+        {
+          tempweights.add(1/dist);
+          tempneibhors.add(j);
+        }
+      }
+      
+      neighbors[i] = convertInts(tempneibhors);
+      weights[i] = convertDoubles(tempweights);
+      
+      if(rowStandardization)
+      {
+        double sum_weight = calcSum(weights[i]);
+        for(int iter=0;iter<weights[i].length;iter++)
+        {
+          weights[i][iter] = weights[i][iter]/sum_weight;
+        }
+      }
+      
+    }
+  }
+  
+  
+  /**
+  *
+  * write spatial neighbors and weights to .gwt file format, which is sparse matrix file. defined at http://www.biomedware.com/files/documentation/spacestat/data/export/Spatial_Weights_Files.htm
+  * It's one of the most common used file format for storing spatial weights
+  *
+  * @param neighbors the spatial configuration for neighors
+  * @param weights the spatial weights for each neighbor
+  * @param fielPath the path for the file to be saved
+  */
+  public void writeWeightsFile(int[][] neighbors,double[][] weights,String filePath)
+  {
+    ArrayList results = new ArrayList();
+    results.add("1\t"+neighbors.length);
+    
+    for(int i=0;i<neighbors.length;i++)
+    {
+      //has neighbors
+      if(neighbors[i].length>0)
+      {
+        for(int j=0;j<neighbors[i].length;j++)
+        {
+          results.add(i+"\t"+neighbors[i][j]+"\t"+weights[i][j]);
+        }
+      }
+    }
+    
+    saveStrings(filePath+".gwt",convertStrings(results));
+  }
+  
+  
+  /**
+  *
+  * read spatial neighbors and weights to arrays, which is sparse matrix file. defined at http://www.biomedware.com/files/documentation/spacestat/data/export/Spatial_Weights_Files.htm
+  *
+  * @param neighbors the spatial configuration for neighors
+  * @param weights the spatial weights for each neighbor
+  * @param fielPath the path for the file to be read
+  */
+  public Object[] readWeightsFile(String filePath)
+  {
+    String[] lines = loadStrings(filePath);
+    int num = Integer.parseInt(lines[0].split("\t")[1]);
+    //println(num);
+    int[][] neighbors = new int[num][];
+    double[][] weights = new double[num][];
+    int oldhost = Integer.parseInt(lines[1].split("\t")[0]);
+    
+    //println(neighbors[neighbors.length-1]);
+    
+    ArrayList temp_neighbor = new ArrayList();
+    ArrayList temp_weight = new ArrayList();
+    
+    for(int i=1;i<lines.length;i++)
+    {
+      String[] data = lines[i].split("\t");
+      int host = Integer.parseInt(data[0]);
+      
+      
+      if(oldhost == host)
+      {
+        temp_neighbor.add(Integer.parseInt(data[1]));
+        temp_weight.add(Double.parseDouble(data[2]));
+      }
+      else
+      {
+        neighbors[oldhost] = convertInts(temp_neighbor);
+        weights[oldhost] = convertDoubles(temp_weight);
+        
+        temp_neighbor.clear();
+        temp_weight.clear();
+        
+        temp_neighbor.add(Integer.parseInt(data[1]));
+        temp_weight.add(Double.parseDouble(data[2]));
+        
+        oldhost=host;
+      }
+    }
+    
+    neighbors[oldhost] = convertInts(temp_neighbor);
+    weights[oldhost] = convertDoubles(temp_weight);
+    
+    return new Object[]{neighbors, weights};
+   
+  }
+  
 }
+
 
 /**
 *
 * convert arraylist of double type and int type to arrays
 *
 */
-public double[] convertDoubles(ArrayList doubles)
+static double[] convertDoubles(ArrayList doubles)
 {
     double[] ret = new double[doubles.size()];
     for (int i = 0; i < ret.length; i++)
@@ -201,12 +295,21 @@ public double[] convertDoubles(ArrayList doubles)
     }
     return ret;
 }
-public int[] convertInts(ArrayList ints)
+static int[] convertInts(ArrayList ints)
 {
     int[] ret = new int[ints.size()];
     for (int i = 0; i < ret.length; i++)
     {
         ret[i] = (Integer)(ints.get(i));
+    }
+    return ret;
+}
+static String[] convertStrings(ArrayList strings)
+{
+    String[] ret = new String[strings.size()];
+    for (int i = 0; i < ret.length; i++)
+    {
+        ret[i] = (String)(strings.get(i));
     }
     return ret;
 }
@@ -219,7 +322,7 @@ public int[] convertInts(ArrayList ints)
 * calculate distance between two points
 *
 */
-double calcDist(double x1,double y1,double x2,double y2){
+static double calcDist(double x1,double y1,double x2,double y2){
   double x_pow2 = Math.pow((x1-x2),2); //<>//
   double y_pow2 = Math.pow((y1-y2),2);
   //println(x1+" " + y1 + " " + x2 + " " +y2);
@@ -248,7 +351,7 @@ static double calcMean(double[] values)
 * calculate the sum values of double arrays
 *
 */
-double calcSum(double[] values)
+static double calcSum(double[] values)
 {
   double sum = (double)0;
   for(int i=0;i<values.length;i++)
